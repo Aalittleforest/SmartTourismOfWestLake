@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>路线规划 - 西湖智慧旅游</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --west-lake-blue: #4A90A4;
+            --lotus-green: #7FB069;
+            --plum-pink: #E8B4B8;
+            --ink-gray: #F5F5F0;
+            --text-dark: #2C3E50;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--ink-gray);
+            color: var(--text-dark);
+        }
+        
+        .hero-title {
+            font-family: 'Noto Serif SC', serif;
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .floating-panel {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 144, 164, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--west-lake-blue);
+            color: var(--west-lake-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--west-lake-blue);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .map-container {
+            height: 400px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .route-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .route-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .route-card.selected {
+            border: 2px solid var(--west-lake-blue);
+            background: rgba(74, 144, 164, 0.05);
+        }
+        
+        .preference-btn {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .preference-btn.active {
+            border-color: var(--west-lake-blue);
+            background: rgba(74, 144, 164, 0.1);
+            color: var(--west-lake-blue);
+        }
+        
+        .time-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+        
+        .time-btn {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .time-btn:hover {
+            border-color: var(--west-lake-blue);
+            background: rgba(74, 144, 164, 0.05);
+        }
+        
+        .time-btn.active {
+            border-color: var(--west-lake-blue);
+            background: var(--west-lake-blue);
+            color: white;
+        }
+        
+        .route-step {
+            position: relative;
+            padding-left: 3rem;
+            padding-bottom: 1.5rem;
+        }
+        
+        .route-step::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            background: var(--west-lake-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+        
+        .route-step::after {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 2.5rem;
+            width: 2px;
+            height: calc(100% - 1rem);
+            background: linear-gradient(to bottom, var(--west-lake-blue), transparent);
+        }
+        
+        .route-step:last-child::after {
+            display: none;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">西</span>
+                    </div>
+                    <h1 class="text-xl font-bold gradient-text">西湖智慧旅游</h1>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">首页导览</a>
+                    <a href="attractions.html" class="text-gray-700 hover:text-blue-600 transition-colors">景点详情</a>
+                    <a href="routes.html" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">路线规划</a>
+                    <a href="profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">个人中心</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="ai-assistant-btn" class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        AI助手
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="hero-title text-4xl md:text-5xl font-bold mb-4">智能路线规划</h1>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    根据您的时间和偏好，为您量身定制最佳的西湖游览路线
+                </p>
+            </div>
+            
+            <!-- Route Planner -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <!-- Preferences Panel -->
+                <div class="lg:col-span-1">
+                    <div class="floating-panel rounded-2xl p-6 sticky top-28">
+                        <h2 class="text-2xl font-bold gradient-text mb-6">路线偏好</h2>
+                        
+                        <!-- Route Type -->
+                        <div class="mb-6">
+                            <h3 class="font-bold text-gray-800 mb-3">游览主题</h3>
+                            <div class="space-y-2">
+                                <button class="preference-btn w-full p-3 rounded-xl text-left active" data-type="culture">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-2xl">🏛️</span>
+                                        <div>
+                                            <div class="font-medium">文化之旅</div>
+                                            <div class="text-sm text-gray-500">历史古迹，文化底蕴</div>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button class="preference-btn w-full p-3 rounded-xl text-left" data-type="nature">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-2xl">🌿</span>
+                                        <div>
+                                            <div class="font-medium">自然风光</div>
+                                            <div class="text-sm text-gray-500">湖光山色，自然美景</div>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button class="preference-btn w-full p-3 rounded-xl text-left" data-type="family">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-2xl">👨‍👩‍👧‍👦</span>
+                                        <div>
+                                            <div class="font-medium">亲子游玩</div>
+                                            <div class="text-sm text-gray-500">适合全家，轻松愉快</div>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button class="preference-btn w-full p-3 rounded-xl text-left" data-type="quick">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-2xl">⚡</span>
+                                        <div>
+                                            <div class="font-medium">快速游览</div>
+                                            <div class="text-sm text-gray-500">精华景点，节省时间</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Time Selection -->
+                        <div class="mb-6">
+                            <h3 class="font-bold text-gray-800 mb-3">游览时间</h3>
+                            <div class="time-selector">
+                                <div class="time-btn active" data-time="1">
+                                    <div class="font-medium">1小时</div>
+                                    <div class="text-sm text-gray-500">快速游览</div>
+                                </div>
+                                <div class="time-btn" data-time="2">
+                                    <div class="font-medium">2小时</div>
+                                    <div class="text-sm text-gray-500">经典路线</div>
+                                </div>
+                                <div class="time-btn" data-time="4">
+                                    <div class="font-medium">半天</div>
+                                    <div class="text-sm text-gray-500">深度体验</div>
+                                </div>
+                                <div class="time-btn" data-time="8">
+                                    <div class="font-medium">全天</div>
+                                    <div class="text-sm text-gray-500">完整游览</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Generate Route Button -->
+                        <button id="generate-route-btn" class="w-full btn-primary text-white py-4 rounded-xl font-medium text-lg">
+                            生成智能路线
+                        </button>
+                        
+                        <!-- Route Statistics -->
+                        <div class="mt-6 stats-grid" id="route-stats" style="display: none;">
+                            <div class="stat-card">
+                                <div class="text-2xl font-bold text-blue-600" id="total-distance">2.5</div>
+                                <div class="text-sm text-gray-600">总距离(公里)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-2xl font-bold text-green-600" id="total-time">90</div>
+                                <div class="text-sm text-gray-600">预计时间(分钟)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-2xl font-bold text-purple-600" id="attraction-count">6</div>
+                                <div class="text-sm text-gray-600">景点数量</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Map and Route Display -->
+                <div class="lg:col-span-2">
+                    <div class="floating-panel rounded-2xl p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-bold gradient-text">路线地图</h2>
+                            <div class="flex items-center space-x-2">
+                                <div class="pulse-animation w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">实时导航</span>
+                            </div>
+                        </div>
+                        
+                        <div id="route-map" class="map-container"></div>
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="flex space-x-2">
+                                <button id="start-navigation-btn" class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium" disabled>
+                                    开始导航
+                                </button>
+                                <button id="save-route-btn" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium" disabled>
+                                    保存路线
+                                </button>
+                            </div>
+                            
+                            <div class="text-sm text-gray-500">
+                                更新时间: <span id="update-time">刚刚</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Route Steps -->
+                    <div class="floating-panel rounded-2xl p-6" id="route-steps" style="display: none;">
+                        <h3 class="text-xl font-bold gradient-text mb-4">路线详情</h3>
+                        <div id="steps-container">
+                            <!-- Route steps will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommended Routes -->
+            <div class="floating-panel rounded-2xl p-8">
+                <h2 class="text-2xl font-bold gradient-text mb-6">推荐路线</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="recommended-routes">
+                    <!-- Recommended routes will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-blue-600 to-green-600 text-white py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold">西</span>
+                </div>
+                <h3 class="text-lg font-bold">西湖智慧旅游</h3>
+            </div>
+            <p class="text-blue-100 mb-2">探索西湖之美，体验智慧之旅</p>
+            <p class="text-sm text-blue-200">© 2025 西湖智慧旅游系统. 让科技为传统文化注入新的活力.</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="main.js"></script>
+    <script>
+        // 路线规划页面特定功能
+        let routeMap;
+        let currentRoute = null;
+        let selectedPreferences = {
+            type: 'culture',
+            time: 1
+        };
+        
+        // 路线数据
+        const routeTemplates = {
+            culture: {
+                1: {
+                    name: '文化精华游',
+                    attractions: ['leifeng-tower', 'broken-bridge', 'three-ponds'],
+                    distance: 2.5,
+                    time: 90,
+                    description: '体验西湖深厚的历史文化底蕴'
+                },
+                2: {
+                    name: '文化深度游',
+                    attractions: ['leifeng-tower', 'broken-bridge', 'three-ponds', 'su-causeway'],
+                    distance: 4.2,
+                    time: 150,
+                    description: '深入了解西湖的历史文化背景'
+                },
+                4: {
+                    name: '文化全景游',
+                    attractions: ['leifeng-tower', 'broken-bridge', 'three-ponds', 'su-causeway', 'willow-waves', 'music-fountain'],
+                    distance: 6.8,
+                    time: 300,
+                    description: '全面体验西湖的文化魅力'
+                }
+            },
+            nature: {
+                1: {
+                    name: '自然风光游',
+                    attractions: ['broken-bridge', 'three-ponds', 'su-causeway'],
+                    distance: 3.1,
+                    time: 100,
+                    description: '欣赏西湖的自然美景'
+                },
+                2: {
+                    name: '湖光山色游',
+                    attractions: ['broken-bridge', 'three-ponds', 'su-causeway', 'willow-waves'],
+                    distance: 4.5,
+                    time: 160,
+                    description: '感受西湖的山水之美'
+                }
+            },
+            family: {
+                1: {
+                    name: '亲子欢乐游',
+                    attractions: ['music-fountain', 'willow-waves', 'broken-bridge'],
+                    distance: 2.8,
+                    time: 120,
+                    description: '适合全家人的轻松游览路线'
+                },
+                2: {
+                    name: '家庭休闲游',
+                    attractions: ['music-fountain', 'willow-waves', 'three-ponds', 'su-causeway'],
+                    distance: 4.0,
+                    time: 180,
+                    description: '让全家人都能享受西湖美景'
+                }
+            },
+            quick: {
+                1: {
+                    name: '快速精华游',
+                    attractions: ['broken-bridge', 'three-ponds'],
+                    distance: 1.8,
+                    time: 60,
+                    description: '在最短时间内游览最经典的景点'
+                },
+                2: {
+                    name: '经典速览游',
+                    attractions: ['broken-bridge', 'three-ponds', 'leifeng-tower'],
+                    distance: 2.9,
+                    time: 90,
+                    description: '快速游览西湖三大经典景点'
+                }
+            }
+        };
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeRoutePage();
+            recordPageVisit('routes.html');
+        });
+        
+        // 初始化路线规划页面
+        function initializeRoutePage() {
+            initializeRouteMap();
+            initializeEventListeners();
+            loadRecommendedRoutes();
+            initializePageAnimations();
+            
+            // 定时更新时间
+            setInterval(updateTime, 60000);
+        }
+        
+        // 初始化地图
+        function initializeRouteMap() {
+            routeMap = L.map('route-map').setView([30.2594, 120.1322], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(routeMap);
+            
+            // 添加所有景点标记
+            attractions.forEach(attraction => {
+                L.marker(attraction.coords)
+                    .addTo(routeMap)
+                    .bindPopup(`<strong>${attraction.name}</strong><br>${attraction.description}`);
+            });
+        }
+        
+        // 初始化事件监听器
+        function initializeEventListeners() {
+            // 偏好选择按钮
+            const preferenceBtns = document.querySelectorAll('.preference-btn');
+            preferenceBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    preferenceBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedPreferences.type = this.dataset.type;
+                    recordClick('preference-btn', 'select-type', this.dataset.type);
+                });
+            });
+            
+            // 时间选择按钮
+            const timeBtns = document.querySelectorAll('.time-btn');
+            timeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    timeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedPreferences.time = parseInt(this.dataset.time);
+                    recordClick('time-btn', 'select-time', this.dataset.time);
+                });
+            });
+            
+            // 生成路线按钮
+            document.getElementById('generate-route-btn').addEventListener('click', function() {
+                generateRoute();
+                recordClick('generate-route-btn', 'generate', selectedPreferences);
+            });
+            
+            // 开始导航按钮
+            document.getElementById('start-navigation-btn').addEventListener('click', function() {
+                startNavigation();
+                recordClick('start-navigation-btn', 'navigate', currentRoute);
+            });
+            
+            // 保存路线按钮
+            document.getElementById('save-route-btn').addEventListener('click', function() {
+                saveRoute();
+                recordClick('save-route-btn', 'save', currentRoute);
+            });
+        }
+        
+        // 生成路线
+        function generateRoute() {
+            const { type, time } = selectedPreferences;
+            
+            // 获取路线模板
+            let routeTemplate;
+            if (routeTemplates[type] && routeTemplates[type][time]) {
+                routeTemplate = routeTemplates[type][time];
+            } else {
+                // 使用默认路线
+                routeTemplate = routeTemplates.culture[1];
+            }
+            
+            // 创建路线对象
+            currentRoute = {
+                ...routeTemplate,
+                id: Date.now(),
+                preferences: selectedPreferences,
+                createdAt: Date.now()
+            };
+            
+            // 显示路线
+            displayRoute(currentRoute);
+            
+            // 更新按钮状态
+            document.getElementById('start-navigation-btn').disabled = false;
+            document.getElementById('save-route-btn').disabled = false;
+            
+            // 显示统计信息
+            displayRouteStats(currentRoute);
+            
+            // 显示成功消息
+            showToast('路线生成成功！', 'success');
+        }
+        
+        // 显示路线
+        function displayRoute(route) {
+            // 清除现有路线
+            routeMap.eachLayer(layer => {
+                if (layer instanceof L.Polyline) {
+                    routeMap.removeLayer(layer);
+                }
+            });
+            
+            // 获取路线中的景点坐标
+            const routeAttractions = route.attractions.map(id => 
+                attractions.find(a => a.id === id)
+            ).filter(Boolean);
+            
+            if (routeAttractions.length > 1) {
+                // 创建路线
+                const coordinates = routeAttractions.map(a => a.coords);
+                const routeLine = L.polyline(coordinates, {
+                    color: '#4A90A4',
+                    weight: 4,
+                    opacity: 0.8,
+                    dashArray: '10, 10'
+                }).addTo(routeMap);
+                
+                // 适配地图范围
+                routeMap.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+            }
+            
+            // 显示路线步骤
+            displayRouteSteps(routeAttractions);
+        }
+        
+        // 显示路线步骤
+        function displayRouteSteps(routeAttractions) {
+            const stepsContainer = document.getElementById('steps-container');
+            const routeStepsPanel = document.getElementById('route-steps');
+            
+            stepsContainer.innerHTML = '';
+            
+            routeAttractions.forEach((attraction, index) => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'route-step';
+                stepDiv.setAttribute('data-step', index + 1);
+                
+                stepDiv.innerHTML = `
+                    <div class="font-bold text-gray-800">${attraction.name}</div>
+                    <div class="text-sm text-gray-600 mb-2">${attraction.description}</div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>⭐ ${attraction.rating}</span>
+                            <span>👥 ${attraction.visitors}人</span>
+                        </div>
+                        <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="viewAttraction('${attraction.id}')">
+                            查看详情
+                        </button>
+                    </div>
+                `;
+                
+                stepsContainer.appendChild(stepDiv);
+            });
+            
+            // 显示步骤面板
+            routeStepsPanel.style.display = 'block';
+            
+            // 动画显示步骤
+            anime({
+                targets: '.route-step',
+                opacity: [0, 1],
+                translateX: [-20, 0],
+                duration: 400,
+                delay: anime.stagger(100),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 显示路线统计
+        function displayRouteStats(route) {
+            const statsPanel = document.getElementById('route-stats');
+            
+            document.getElementById('total-distance').textContent = route.distance;
+            document.getElementById('total-time').textContent = route.time;
+            document.getElementById('attraction-count').textContent = route.attractions.length;
+            
+            statsPanel.style.display = 'grid';
+            
+            // 动画显示统计
+            anime({
+                targets: '.stat-card',
+                opacity: [0, 1],
+                scale: [0.8, 1],
+                duration: 500,
+                delay: anime.stagger(100),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 开始导航
+        function startNavigation() {
+            if (!currentRoute) return;
+            
+            showToast('导航功能启动中...', 'info');
+            
+            setTimeout(() => {
+                showToast('导航已开始！请跟随路线指引', 'success');
+                
+                // 模拟导航更新
+                let stepIndex = 0;
+                const navigationInterval = setInterval(() => {
+                    if (stepIndex < currentRoute.attractions.length) {
+                        const attraction = attractions.find(a => a.id === currentRoute.attractions[stepIndex]);
+                        showToast(`即将到达：${attraction.name}`, 'info');
+                        stepIndex++;
+                    } else {
+                        clearInterval(navigationInterval);
+                        showToast('导航结束！感谢您的使用', 'success');
+                    }
+                }, 10000); // 每10秒更新一次
+            }, 2000);
+        }
+        
+        // 保存路线
+        function saveRoute() {
+            if (!currentRoute) return;
+            
+            // 保存到用户数据
+            if (!userData.savedRoutes) {
+                userData.savedRoutes = [];
+            }
+            
+            userData.savedRoutes.push(currentRoute);
+            saveUserData();
+            
+            showToast('路线保存成功！', 'success');
+        }
+        
+        // 加载推荐路线
+        function loadRecommendedRoutes() {
+            const container = document.getElementById('recommended-routes');
+            const recommended = [
+                {
+                    name: '经典文化游',
+                    type: 'culture',
+                    time: '2小时',
+                    distance: '4.2公里',
+                    attractions: ['雷峰塔', '断桥残雪', '三潭印月', '苏堤春晓'],
+                    image: 'resources/attraction-1.jpg',
+                    description: '深度体验西湖的历史文化魅力'
+                },
+                {
+                    name: '自然风光游',
+                    type: 'nature',
+                    time: '1.5小时',
+                    distance: '3.1公里',
+                    attractions: ['断桥残雪', '三潭印月', '苏堤春晓'],
+                    image: 'resources/attraction-2.jpg',
+                    description: '欣赏西湖最美的自然风光'
+                },
+                {
+                    name: '亲子欢乐游',
+                    type: 'family',
+                    time: '2小时',
+                    distance: '2.8公里',
+                    attractions: ['音乐喷泉', '柳浪闻莺', '断桥残雪'],
+                    image: 'resources/attraction-4.jpg',
+                    description: '适合全家人的轻松游览路线'
+                }
+            ];
+            
+            recommended.forEach((route, index) => {
+                const card = document.createElement('div');
+                card.className = 'route-card bg-white rounded-2xl overflow-hidden shadow-lg';
+                card.innerHTML = `
+                    <img src="${route.image}" alt="${route.name}" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">${route.name}</h3>
+                        <p class="text-gray-600 mb-4">${route.description}</p>
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                            <span>⏱️ ${route.time}</span>
+                            <span>📍 ${route.distance}</span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="text-sm font-medium text-gray-700 mb-2">包含景点：</div>
+                            <div class="flex flex-wrap gap-1">
+                                ${route.attractions.map(a => `<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">${a}</span>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <button class="w-full btn-primary text-white py-2 rounded-xl font-medium" onclick="selectRecommendedRoute('${route.type}', ${index})">
+                            选择此路线
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 动画显示推荐路线
+            anime({
+                targets: '.route-card',
+                opacity: [0, 1],
+                translateY: [30, 0],
+                duration: 600,
+                delay: anime.stagger(150),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 选择推荐路线
+        function selectRecommendedRoute(type, index) {
+            const routeTemplates = {
+                culture: ['culture', 'culture', 'family'],
+                nature: ['nature', 'nature', 'nature'],
+                family: ['family', 'family', 'culture']
+            };
+            
+            const routeType = routeTemplates[type][index] || 'culture';
+            const timeOptions = [1, 2, 2];
+            const time = timeOptions[index] || 1;
+            
+            // 更新选择
+            selectedPreferences.type = routeType;
+            selectedPreferences.time = time;
+            
+            // 更新UI
+            document.querySelectorAll('.preference-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === routeType) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.time) === time) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 生成路线
+            generateRoute();
+            
+            recordClick('recommended-route', 'select', {type, index});
+        }
+        
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('update-time').textContent = timeString;
+        }
+        
+        // 页面动画
+        function initializePageAnimations() {
+            // 标题动画
+            anime({
+                targets: '.hero-title',
+                opacity: [0, 1],
+                translateY: [30, 0],
+                duration: 800,
+                easing: 'easeOutQuad'
+            });
+            
+            // 面板依次出现
+            anime({
+                targets: '.floating-panel',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 600,
+                delay: anime.stagger(150, {start: 200}),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 查看景点
+        function viewAttraction(attractionId) {
+            window.location.href = `attractions.html?id=${attractionId}`;
+        }
+    </script>
+</body>
+</html>

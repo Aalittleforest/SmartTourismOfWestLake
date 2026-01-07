@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 西湖智慧旅游</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <style>
+        :root {
+            --west-lake-blue: #4A90A4;
+            --lotus-green: #7FB069;
+            --plum-pink: #E8B4B8;
+            --ink-gray: #F5F5F0;
+            --text-dark: #2C3E50;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--ink-gray);
+            color: var(--text-dark);
+        }
+        
+        .hero-title {
+            font-family: 'Noto Serif SC', serif;
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .floating-panel {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 144, 164, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--west-lake-blue);
+            color: var(--west-lake-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--west-lake-blue);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .achievement-badge {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .achievement-badge.earned {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        }
+        
+        .achievement-badge.locked {
+            background: #E5E7EB;
+            color: #9CA3AF;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 3rem;
+            padding-bottom: 1.5rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+            background: var(--west-lake-blue);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px var(--west-lake-blue);
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 1.25rem;
+            top: 1.5rem;
+            width: 2px;
+            height: calc(100% - 1rem);
+            background: linear-gradient(to bottom, var(--west-lake-blue), transparent);
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .tab-btn.active {
+            background: var(--west-lake-blue);
+            color: white;
+            border-color: var(--west-lake-blue);
+        }
+        
+        .tab-btn:not(.active):hover {
+            border-color: var(--west-lake-blue);
+            background: rgba(74, 144, 164, 0.1);
+        }
+        
+        .favorite-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .favorite-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .data-export-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .data-export-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .data-export-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">西</span>
+                    </div>
+                    <h1 class="text-xl font-bold gradient-text">西湖智慧旅游</h1>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">首页导览</a>
+                    <a href="attractions.html" class="text-gray-700 hover:text-blue-600 transition-colors">景点详情</a>
+                    <a href="routes.html" class="text-gray-700 hover:text-blue-600 transition-colors">路线规划</a>
+                    <a href="profile.html" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">个人中心</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="ai-assistant-btn" class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        AI助手
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="hero-title text-4xl md:text-5xl font-bold mb-4">个人中心</h1>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    记录您的西湖之旅，查看游览数据，管理个人收藏
+                </p>
+            </div>
+            
+            <!-- User Profile -->
+            <div class="floating-panel rounded-2xl p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+                    <!-- Avatar -->
+                    <div class="text-center">
+                        <div class="w-32 h-32 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-6xl text-white mb-4">
+                            👤
+                        </div>
+                        <h2 class="text-2xl font-bold gradient-text">西湖游客</h2>
+                        <p class="text-gray-600">智慧旅游体验者</p>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="flex-1 w-full">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="text-3xl font-bold text-blue-600 mb-2" id="total-checkins">0</div>
+                                <div class="text-gray-600">总打卡数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-3xl font-bold text-green-600 mb-2" id="total-visits">0</div>
+                                <div class="text-gray-600">游览景点</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-3xl font-bold text-purple-600 mb-2" id="total-time">0</div>
+                                <div class="text-gray-600">游览时长(小时)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-3xl font-bold text-yellow-600 mb-2" id="user-level">1</div>
+                                <div class="text-gray-600">用户等级</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Level Progress -->
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">等级进度</span>
+                                <span class="text-sm text-gray-500" id="level-progress">0/100</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="mb-8">
+                <div class="flex flex-wrap gap-4 justify-center">
+                    <button class="tab-btn active" data-tab="checkins">打卡记录</button>
+                    <button class="tab-btn" data-tab="favorites">我的收藏</button>
+                    <button class="tab-btn" data-tab="routes">保存路线</button>
+                    <button class="tab-btn" data-tab="achievements">成就徽章</button>
+                    <button class="tab-btn" data-tab="data">数据统计</button>
+                </div>
+            </div>
+            
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <!-- Checkins Tab -->
+                <div id="checkins-tab" class="tab-content">
+                    <div class="floating-panel rounded-2xl p-8">
+                        <h3 class="text-2xl font-bold gradient-text mb-6">打卡时间线</h3>
+                        <div id="checkin-timeline" class="space-y-4">
+                            <!-- Checkin timeline will be loaded here -->
+                        </div>
+                        
+                        <div class="mt-8 text-center">
+                            <button class="btn-secondary px-6 py-3 rounded-xl font-medium data-export-btn" onclick="exportCheckinData()">
+                                📊 导出打卡数据
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Favorites Tab -->
+                <div id="favorites-tab" class="tab-content" style="display: none;">
+                    <div class="floating-panel rounded-2xl p-8">
+                        <h3 class="text-2xl font-bold gradient-text mb-6">收藏的景点</h3>
+                        <div id="favorites-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Favorite attractions will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Routes Tab -->
+                <div id="routes-tab" class="tab-content" style="display: none;">
+                    <div class="floating-panel rounded-2xl p-8">
+                        <h3 class="text-2xl font-bold gradient-text mb-6">保存的路线</h3>
+                        <div id="routes-list" class="space-y-4">
+                            <!-- Saved routes will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Achievements Tab -->
+                <div id="achievements-tab" class="tab-content" style="display: none;">
+                    <div class="floating-panel rounded-2xl p-8">
+                        <h3 class="text-2xl font-bold gradient-text mb-6">成就徽章</h3>
+                        <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            <!-- Achievement badges will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Tab -->
+                <div id="data-tab" class="tab-content" style="display: none;">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Visit Statistics -->
+                        <div class="floating-panel rounded-2xl p-6">
+                            <h3 class="text-xl font-bold gradient-text mb-4">游览统计</h3>
+                            <div id="visit-chart" style="height: 300px;"></div>
+                        </div>
+                        
+                        <!-- Preference Analysis -->
+                        <div class="floating-panel rounded-2xl p-6">
+                            <h3 class="text-xl font-bold gradient-text mb-4">偏好分析</h3>
+                            <div id="preference-chart" style="height: 300px;"></div>
+                        </div>
+                        
+                        <!-- Data Export -->
+                        <div class="floating-panel rounded-2xl p-6 lg:col-span-2">
+                            <h3 class="text-xl font-bold gradient-text mb-4">数据导出</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <button class="data-export-btn btn-secondary p-4 rounded-xl text-center" onclick="exportUserData('json')">
+                                    <div class="text-2xl mb-2">📄</div>
+                                    <div class="font-medium">导出JSON</div>
+                                    <div class="text-sm text-gray-500">完整用户数据</div>
+                                </button>
+                                
+                                <button class="data-export-btn btn-secondary p-4 rounded-xl text-center" onclick="exportUserData('csv')">
+                                    <div class="text-2xl mb-2">📊</div>
+                                    <div class="font-medium">导出CSV</div>
+                                    <div class="text-sm text-gray-500">打卡记录表格</div>
+                                </button>
+                                
+                                <button class="data-export-btn btn-secondary p-4 rounded-xl text-center" onclick="generateReport()">
+                                    <div class="text-2xl mb-2">📈</div>
+                                    <div class="font-medium">生成报告</div>
+                                    <div class="text-sm text-gray-500">游览分析报告</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-blue-600 to-green-600 text-white py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold">西</span>
+                </div>
+                <h3 class="text-lg font-bold">西湖智慧旅游</h3>
+            </div>
+            <p class="text-blue-100 mb-2">探索西湖之美，体验智慧之旅</p>
+            <p class="text-sm text-blue-200">© 2025 西湖智慧旅游系统. 让科技为传统文化注入新的活力.</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="main.js"></script>
+    <script>
+        // 个人中心页面特定功能
+        let currentTab = 'checkins';
+        let visitChart = null;
+        let preferenceChart = null;
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeProfilePage();
+            recordPageVisit('profile.html');
+        });
+        
+        // 初始化个人中心页面
+        function initializeProfilePage() {
+            loadUserStats();
+            initializeTabSwitching();
+            loadTabContent(currentTab);
+            initializeCharts();
+            initializePageAnimations();
+        }
+        
+        // 加载用户统计信息
+        function loadUserStats() {
+            const checkins = userData.checkIns || [];
+            const visits = userData.visits || [];
+            const favorites = userData.favorites || [];
+            
+            // 计算统计数据
+            const totalCheckins = checkins.length;
+            const totalVisits = new Set(visits.map(v => v.page)).size;
+            const totalTime = Math.round((Date.now() - userData.startTime) / (1000 * 60 * 60));
+            const userLevel = Math.min(Math.floor(totalCheckins / 5) + 1, 10);
+            const levelProgress = (totalCheckins % 5) * 20;
+            
+            // 更新UI
+            document.getElementById('total-checkins').textContent = totalCheckins;
+            document.getElementById('total-visits').textContent = totalVisits;
+            document.getElementById('total-time').textContent = totalTime;
+            document.getElementById('user-level').textContent = userLevel;
+            document.getElementById('level-progress').textContent = `${totalCheckins % 5}/5`;
+            document.getElementById('progress-fill').style.width = `${levelProgress}%`;
+            
+            // 动画显示数字
+            animateNumbers();
+        }
+        
+        // 数字动画
+        function animateNumbers() {
+            const statCards = document.querySelectorAll('.stat-card .text-3xl');
+            statCards.forEach(card => {
+                const finalValue = parseInt(card.textContent);
+                if (finalValue > 0) {
+                    anime({
+                        targets: { value: 0 },
+                        value: finalValue,
+                        duration: 1000,
+                        easing: 'easeOutQuad',
+                        update: function(anim) {
+                            card.textContent = Math.round(anim.animatables[0].target.value);
+                        }
+                    });
+                }
+            });
+        }
+        
+        // 初始化标签切换
+        function initializeTabSwitching() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tab = this.dataset.tab;
+                    switchTab(tab);
+                    recordClick('tab-btn', 'switch-tab', tab);
+                });
+            });
+        }
+        
+        // 切换标签
+        function switchTab(tabName) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // 显示选中的标签内容
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+            
+            // 加载标签内容
+            loadTabContent(tabName);
+            
+            currentTab = tabName;
+        }
+        
+        // 加载标签内容
+        function loadTabContent(tabName) {
+            switch (tabName) {
+                case 'checkins':
+                    loadCheckinTimeline();
+                    break;
+                case 'favorites':
+                    loadFavorites();
+                    break;
+                case 'routes':
+                    loadSavedRoutes();
+                    break;
+                case 'achievements':
+                    loadAchievements();
+                    break;
+                case 'data':
+                    updateCharts();
+                    break;
+            }
+        }
+        
+        // 加载打卡时间线
+        function loadCheckinTimeline() {
+            const timeline = document.getElementById('checkin-timeline');
+            const checkins = userData.checkIns || [];
+            
+            if (checkins.length === 0) {
+                timeline.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-4">📍</div>
+                        <p>还没有打卡记录</p>
+                        <p class="text-sm mt-2">去景点页面开始您的西湖之旅吧！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            timeline.innerHTML = '';
+            
+            // 按时间排序（最新的在前）
+            const sortedCheckins = checkins.sort((a, b) => b.timestamp - a.timestamp);
+            
+            sortedCheckins.forEach((checkin, index) => {
+                const date = new Date(checkin.timestamp);
+                const timeString = date.toLocaleString('zh-CN');
+                
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.innerHTML = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-gray-800">${checkin.attractionName}</h4>
+                            <span class="text-sm text-gray-500">${timeString}</span>
+                        </div>
+                        <div class="flex items-center space-x-4 text-sm text-gray-600">
+                            <span>📍 打卡成功</span>
+                            <span>🎉 +10积分</span>
+                        </div>
+                    </div>
+                `;
+                
+                timeline.appendChild(item);
+            });
+            
+            // 动画显示时间线
+            anime({
+                targets: '.timeline-item',
+                opacity: [0, 1],
+                translateX: [-20, 0],
+                duration: 400,
+                delay: anime.stagger(100),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 加载收藏
+        function loadFavorites() {
+            const grid = document.getElementById('favorites-grid');
+            const favorites = userData.favorites || [];
+            
+            if (favorites.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-4">❤️</div>
+                        <p>还没有收藏任何景点</p>
+                        <p class="text-sm mt-2">去发现更多美丽的景点吧！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = '';
+            
+            favorites.forEach(attractionId => {
+                const attraction = attractions.find(a => a.id === attractionId);
+                if (attraction) {
+                    const card = document.createElement('div');
+                    card.className = 'favorite-card bg-white rounded-2xl overflow-hidden shadow-lg';
+                    card.innerHTML = `
+                        <img src="${attraction.image}" alt="${attraction.name}" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-bold mb-2">${attraction.name}</h4>
+                            <p class="text-gray-600 mb-4">${attraction.description}</p>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-yellow-500">★</span>
+                                    <span class="text-sm">${attraction.rating}</span>
+                                </div>
+                                <span class="text-sm text-gray-500">${attraction.visitors}人游览</span>
+                            </div>
+                            <button class="w-full btn-primary text-white py-2 rounded-xl font-medium" onclick="viewAttraction('${attraction.id}')">
+                                查看详情
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+            
+            // 动画显示收藏卡片
+            anime({
+                targets: '.favorite-card',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 400,
+                delay: anime.stagger(100),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 加载保存的路线
+        function loadSavedRoutes() {
+            const container = document.getElementById('routes-list');
+            const savedRoutes = userData.savedRoutes || [];
+            
+            if (savedRoutes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-4">🗺️</div>
+                        <p>还没有保存任何路线</p>
+                        <p class="text-sm mt-2">去路线规划页面创建您的专属路线！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            savedRoutes.forEach(route => {
+                const routeCard = document.createElement('div');
+                routeCard.className = 'bg-white p-6 rounded-xl shadow-sm';
+                routeCard.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold">${route.name}</h4>
+                        <span class="text-sm text-gray-500">${new Date(route.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div class="text-center">
+                            <div class="text-lg font-bold text-blue-600">${route.distance}</div>
+                            <div class="text-xs text-gray-500">公里</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-bold text-green-600">${route.time}</div>
+                            <div class="text-xs text-gray-500">分钟</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-bold text-purple-600">${route.attractions.length}</div>
+                            <div class="text-xs text-gray-500">景点</div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 btn-primary text-white py-2 rounded-lg text-sm font-medium" onclick="loadRoute('${route.id}')">
+                            加载路线
+                        </button>
+                        <button class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium" onclick="deleteRoute('${route.id}')">
+                            删除
+                        </button>
+                    </div>
+                `;
+                container.appendChild(routeCard);
+            });
+        }
+        
+        // 加载成就
+        function loadAchievements() {
+            const grid = document.getElementById('achievements-grid');
+            const checkins = userData.checkIns || [];
+            const favorites = userData.favorites || [];
+            
+            const achievements = [
+                {
+                    id: 'first-checkin',
+                    name: '初次打卡',
+                    description: '完成第一次景点打卡',
+                    icon: '🎯',
+                    condition: checkins.length >= 1,
+                    progress: Math.min(checkins.length, 1),
+                    target: 1
+                },
+                {
+                    id: 'explorer',
+                    name: '探索者',
+                    description: '打卡5个不同景点',
+                    icon: '🗺️',
+                    condition: checkins.length >= 5,
+                    progress: Math.min(checkins.length, 5),
+                    target: 5
+                },
+                {
+                    id: 'collector',
+                    name: '收藏家',
+                    description: '收藏3个景点',
+                    icon: '❤️',
+                    condition: favorites.length >= 3,
+                    progress: Math.min(favorites.length, 3),
+                    target: 3
+                },
+                {
+                    id: 'traveler',
+                    name: '旅行家',
+                    description: '游览时间超过24小时',
+                    icon: '⏰',
+                    condition: (Date.now() - userData.startTime) / (1000 * 60 * 60) >= 24,
+                    progress: Math.min((Date.now() - userData.startTime) / (1000 * 60 * 60), 24),
+                    target: 24
+                },
+                {
+                    id: 'route-master',
+                    name: '路线大师',
+                    description: '保存5条路线',
+                    icon: '🛣️',
+                    condition: (userData.savedRoutes || []).length >= 5,
+                    progress: Math.min((userData.savedRoutes || []).length, 5),
+                    target: 5
+                },
+                {
+                    id: 'west-lake-expert',
+                    name: '西湖专家',
+                    description: '打卡所有主要景点',
+                    icon: '🏆',
+                    condition: checkins.length >= attractions.length,
+                    progress: Math.min(checkins.length, attractions.length),
+                    target: attractions.length
+                }
+            ];
+            
+            grid.innerHTML = '';
+            
+            achievements.forEach(achievement => {
+                const earned = achievement.condition;
+                const progressPercent = (achievement.progress / achievement.target) * 100;
+                
+                const card = document.createElement('div');
+                card.className = 'text-center p-6 bg-white rounded-2xl shadow-lg';
+                card.innerHTML = `
+                    <div class="achievement-badge ${earned ? 'earned' : 'locked'}">
+                        ${achievement.icon}
+                    </div>
+                    <h4 class="font-bold text-gray-800 mb-2">${achievement.name}</h4>
+                    <p class="text-sm text-gray-600 mb-4">${achievement.description}</p>
+                    
+                    <div class="progress-bar mb-2">
+                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        ${achievement.progress}/${achievement.target}
+                    </div>
+                    
+                    ${earned ? '<div class="text-xs text-green-600 font-medium mt-2">✓ 已获得</div>' : ''}
+                `;
+                grid.appendChild(card);
+            });
+            
+            // 动画显示成就
+            anime({
+                targets: '.achievement-badge',
+                scale: [0.8, 1],
+                duration: 500,
+                delay: anime.stagger(100),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 初始化图表
+        function initializeCharts() {
+            // 游览统计图表
+            const visitChartDom = document.getElementById('visit-chart');
+            visitChart = echarts.init(visitChartDom);
+            
+            // 偏好分析图表
+            const preferenceChartDom = document.getElementById('preference-chart');
+            preferenceChart = echarts.init(preferenceChartDom);
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            const checkins = userData.checkIns || [];
+            
+            // 游览统计 - 按日期统计
+            const visitData = {};
+            checkins.forEach(checkin => {
+                const date = new Date(checkin.timestamp).toLocaleDateString();
+                visitData[date] = (visitData[date] || 0) + 1;
+            });
+            
+            const visitOption = {
+                title: {
+                    text: '打卡趋势',
+                    textStyle: {
+                        color: '#4A90A4',
+                        fontSize: 16
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: Object.keys(visitData)
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '打卡次数'
+                },
+                series: [{
+                    data: Object.values(visitData),
+                    type: 'line',
+                    smooth: true,
+                    itemStyle: {
+                        color: '#4A90A4'
+                    },
+                    areaStyle: {
+                        color: 'rgba(74, 144, 164, 0.1)'
+                    }
+                }]
+            };
+            
+            visitChart.setOption(visitOption);
+            
+            // 偏好分析
+            const typeCount = {};
+            checkins.forEach(checkin => {
+                const attraction = attractions.find(a => a.id === checkin.attractionId);
+                if (attraction) {
+                    typeCount[attraction.type] = (typeCount[attraction.type] || 0) + 1;
+                }
+            });
+            
+            const typeNames = {
+                nature: '自然风光',
+                culture: '历史文化',
+                leisure: '休闲娱乐'
+            };
+            
+            const preferenceOption = {
+                title: {
+                    text: '游览偏好',
+                    textStyle: {
+                        color: '#4A90A4',
+                        fontSize: 16
+                    }
+                },
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: Object.entries(typeCount).map(([type, count]) => ({
+                        value: count,
+                        name: typeNames[type] || type
+                    })),
+                    itemStyle: {
+                        color: function(params) {
+                            const colors = ['#4A90A4', '#7FB069', '#E8B4B8'];
+                            return colors[params.dataIndex % colors.length];
+                        }
+                    }
+                }]
+            };
+            
+            preferenceChart.setOption(preferenceOption);
+        }
+        
+        // 导出用户数据
+        function exportUserData(format) {
+            const data = {
+                userInfo: {
+                    startTime: userData.startTime,
+                    totalCheckins: (userData.checkIns || []).length,
+                    totalVisits: (userData.visits || []).length,
+                    totalFavorites: (userData.favorites || []).length
+                },
+                checkIns: userData.checkIns || [],
+                visits: userData.visits || [],
+                favorites: userData.favorites || [],
+                savedRoutes: userData.savedRoutes || []
+            };
+            
+            if (format === 'json') {
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                downloadFile(blob, 'west-lake-user-data.json');
+                showToast('JSON数据导出成功！', 'success');
+            } else if (format === 'csv') {
+                const csvData = convertToCSV(data.checkIns);
+                const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+                downloadFile(blob, 'west-lake-checkins.csv');
+                showToast('CSV数据导出成功！', 'success');
+            }
+            
+            recordClick('export-data', 'export', format);
+        }
+        
+        // 转换为CSV格式
+        function convertToCSV(checkins) {
+            if (checkins.length === 0) return '时间,景点名称,坐标\n';
+            
+            let csv = '时间,景点名称,坐标\n';
+            checkins.forEach(checkin => {
+                const date = new Date(checkin.timestamp).toLocaleString();
+                csv += `${date},${checkin.attractionName},"${checkin.location.join(',')}"\n`;
+            });
+            
+            return csv;
+        }
+        
+        // 下载文件
+        function downloadFile(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // 生成报告
+        function generateReport() {
+            showToast('正在生成游览报告...', 'info');
+            
+            setTimeout(() => {
+                const report = {
+                    title: '西湖智慧旅游 - 个人游览报告',
+                    generatedAt: new Date().toLocaleString(),
+                    summary: {
+                        totalCheckins: (userData.checkIns || []).length,
+                        totalVisits: (userData.visits || []).length,
+                        totalFavorites: (userData.favorites || []).length,
+                        totalTime: Math.round((Date.now() - userData.startTime) / (1000 * 60 * 60))
+                    },
+                    recommendations: [
+                        '建议游览更多不同类型的景点',
+                        '可以尝试不同的游览路线',
+                        '关注天气变化，选择最佳游览时间'
+                    ]
+                };
+                
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                downloadFile(blob, 'west-lake-travel-report.json');
+                showToast('游览报告生成成功！', 'success');
+            }, 2000);
+            
+            recordClick('generate-report', 'generate', 'report');
+        }
+        
+        // 导出打卡数据
+        function exportCheckinData() {
+            const checkins = userData.checkIns || [];
+            if (checkins.length === 0) {
+                showToast('暂无打卡数据可导出', 'info');
+                return;
+            }
+            
+            const csvData = convertToCSV(checkins);
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            downloadFile(blob, 'west-lake-checkins.csv');
+            showToast('打卡数据导出成功！', 'success');
+            
+            recordClick('export-checkin-data', 'export', 'checkins');
+        }
+        
+        // 加载路线
+        function loadRoute(routeId) {
+            const route = (userData.savedRoutes || []).find(r => r.id == routeId);
+            if (route) {
+                window.location.href = `routes.html?route=${routeId}`;
+            }
+        }
+        
+        // 删除路线
+        function deleteRoute(routeId) {
+            if (confirm('确定要删除这条路线吗？')) {
+                userData.savedRoutes = (userData.savedRoutes || []).filter(r => r.id != routeId);
+                saveUserData();
+                loadSavedRoutes();
+                showToast('路线删除成功', 'success');
+                recordClick('delete-route', 'delete', routeId);
+            }
+        }
+        
+        // 页面动画
+        function initializePageAnimations() {
+            // 标题动画
+            anime({
+                targets: '.hero-title',
+                opacity: [0, 1],
+                translateY: [30, 0],
+                duration: 800,
+                easing: 'easeOutQuad'
+            });
+            
+            // 面板依次出现
+            anime({
+                targets: '.floating-panel',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 600,
+                delay: anime.stagger(150, {start: 200}),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 显示提示
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            toast.className = `fixed top-24 right-6 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            anime({
+                targets: toast,
+                translateX: [300, 0],
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutQuad'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: toast,
+                    translateX: [0, 300],
+                    opacity: [1, 0],
+                    duration: 500,
+                    easing: 'easeInQuad',
+                    complete: () => {
+                        document.body.removeChild(toast);
+                    }
+                });
+            }, 3000);
+        }
+        
+        // 查看景点
+        function viewAttraction(attractionId) {
+            window.location.href = `attractions.html?id=${attractionId}`;
+        }
+        
+        // 响应式图表
+        window.addEventListener('resize', function() {
+            if (visitChart) visitChart.resize();
+            if (preferenceChart) preferenceChart.resize();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>景点详情 - 西湖智慧旅游</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Splide CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+    
+    <!-- Splide JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    
+    <style>
+        :root {
+            --west-lake-blue: #4A90A4;
+            --lotus-green: #7FB069;
+            --plum-pink: #E8B4B8;
+            --ink-gray: #F5F5F0;
+            --text-dark: #2C3E50;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--ink-gray);
+            color: var(--text-dark);
+        }
+        
+        .hero-title {
+            font-family: 'Noto Serif SC', serif;
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .floating-panel {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 144, 164, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--west-lake-blue);
+            color: var(--west-lake-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--west-lake-blue);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .splide__slide img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        
+        .poem-card {
+            background: linear-gradient(135deg, rgba(74, 144, 164, 0.1), rgba(127, 176, 105, 0.1));
+            border-left: 4px solid var(--west-lake-blue);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .rating-stars {
+            color: #FFC107;
+        }
+        
+        .checkin-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .checkin-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .checkin-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            background: var(--west-lake-blue);
+            border-radius: 50%;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 1.5rem;
+            width: 2px;
+            height: calc(100% - 1rem);
+            background: linear-gradient(to bottom, var(--west-lake-blue), transparent);
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        .favorite-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .favorite-btn.active {
+            color: #E8B4B8;
+            transform: scale(1.1);
+        }
+        
+        .attraction-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .attraction-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">西</span>
+                    </div>
+                    <h1 class="text-xl font-bold gradient-text">西湖智慧旅游</h1>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">首页导览</a>
+                    <a href="attractions.html" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">景点详情</a>
+                    <a href="routes.html" class="text-gray-700 hover:text-blue-600 transition-colors">路线规划</a>
+                    <a href="profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">个人中心</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="ai-assistant-btn" class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        AI助手
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="pt-24 px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <!-- Back Button -->
+            <div class="mb-6">
+                <button onclick="history.back()" class="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span>返回</span>
+                </button>
+            </div>
+            
+            <!-- Attraction Header -->
+            <div class="floating-panel rounded-2xl p-8 mb-8" id="attraction-header">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Image Gallery -->
+                    <div>
+                        <div class="splide" id="image-gallery">
+                            <div class="splide__track">
+                                <ul class="splide__list" id="image-list">
+                                    <!-- Images will be loaded dynamically -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Basic Info -->
+                    <div>
+                        <h1 class="hero-title text-4xl font-bold mb-4" id="attraction-name">加载中...</h1>
+                        
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="flex items-center space-x-1">
+                                <div class="rating-stars text-xl" id="rating-stars">★★★★★</div>
+                                <span class="text-gray-600 ml-2" id="rating-score">4.8</span>
+                            </div>
+                            <div class="text-gray-500">|</div>
+                            <div class="text-gray-600" id="visitor-count">1,580 人已游览</div>
+                        </div>
+                        
+                        <p class="text-gray-700 text-lg mb-6" id="attraction-description">
+                            正在加载景点介绍...
+                        </p>
+                        
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <button id="checkin-btn" class="checkin-btn btn-primary text-white px-6 py-3 rounded-xl font-medium">
+                                📍 立即打卡
+                            </button>
+                            <button id="favorite-btn" class="btn-secondary px-6 py-3 rounded-xl font-medium">
+                                ❤️ 收藏
+                            </button>
+                            <button id="share-btn" class="btn-secondary px-6 py-3 rounded-xl font-medium">
+                                🔗 分享
+                            </button>
+                        </div>
+                        
+                        <!-- Quick Stats -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center p-4 bg-blue-50 rounded-xl">
+                                <div class="text-2xl font-bold text-blue-600" id="checkin-today">247</div>
+                                <div class="text-sm text-gray-600">今日打卡</div>
+                            </div>
+                            <div class="text-center p-4 bg-green-50 rounded-xl">
+                                <div class="text-2xl font-bold text-green-600" id="favorite-count">1.2k</div>
+                                <div class="text-sm text-gray-600">收藏人数</div>
+                            </div>
+                            <div class="text-center p-4 bg-purple-50 rounded-xl">
+                                <div class="text-2xl font-bold text-purple-600" id="share-count">856</div>
+                                <div class="text-sm text-gray-600">分享次数</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Information -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Content -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Cultural Content -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold gradient-text mb-4">文化背景</h2>
+                        <div class="poem-card p-6 rounded-xl mb-6">
+                            <h3 class="text-lg font-bold mb-3 text-gray-800">相关诗词</h3>
+                            <blockquote class="text-xl font-medium text-gray-700 mb-3" id="poem-content">
+                                "断桥荒藓合，空院落花深。"
+                            </blockquote>
+                            <cite class="text-sm text-gray-500" id="poem-author">— 唐代诗人</cite>
+                        </div>
+                        
+                        <div class="prose max-w-none">
+                            <p class="text-gray-700 leading-relaxed mb-4" id="cultural-content">
+                                这里是关于景点的历史文化背景介绍...
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Practical Information -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold gradient-text mb-4">实用信息</h2>
+                        <div class="info-grid">
+                            <div class="bg-blue-50 p-4 rounded-xl">
+                                <h3 class="font-bold text-blue-800 mb-2">开放时间</h3>
+                                <p class="text-gray-700" id="opening-hours">全天开放</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-xl">
+                                <h3 class="font-bold text-green-800 mb-2">门票价格</h3>
+                                <p class="text-gray-700" id="ticket-price">免费</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-xl">
+                                <h3 class="font-bold text-purple-800 mb-2">建议游览时间</h3>
+                                <p class="text-gray-700" id="suggested-time">1-2小时</p>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-xl">
+                                <h3 class="font-bold text-yellow-800 mb-2">最佳季节</h3>
+                                <p class="text-gray-700" id="best-season">四季皆宜</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h3 class="font-bold text-gray-800 mb-3">交通指南</h3>
+                            <div class="space-y-2 text-gray-700" id="transport-info">
+                                <p>• 公交：Y1路、Y2路、Y9路断桥站下车</p>
+                                <p>• 地铁：1号线龙翔桥站下车，步行约10分钟</p>
+                                <p>• 自驾：景区周边有多个停车场</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Reviews -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h2 class="text-2xl font-bold gradient-text mb-4">游客评价</h2>
+                        <div class="space-y-4" id="reviews-container">
+                            <!-- Reviews will be loaded dynamically -->
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <button class="w-full btn-secondary py-3 rounded-xl font-medium">
+                                查看更多评价
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar -->
+                <div class="space-y-6">
+                    <!-- Visit Timeline -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold gradient-text mb-4">游览时间线</h3>
+                        <div class="space-y-4" id="visit-timeline">
+                            <div class="timeline-item">
+                                <div class="font-medium text-gray-800">到达景点</div>
+                                <div class="text-sm text-gray-500">建议上午9:00-10:00到达</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="font-medium text-gray-800">游览拍照</div>
+                                <div class="text-sm text-gray-500">预留30-45分钟游览时间</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="font-medium text-gray-800">文化体验</div>
+                                <div class="text-sm text-gray-500">了解历史文化背景</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="font-medium text-gray-800">打卡分享</div>
+                                <div class="text-sm text-gray-500">记录美好时刻</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nearby Attractions -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold gradient-text mb-4">附近景点</h3>
+                        <div class="space-y-3" id="nearby-attractions">
+                            <!-- Nearby attractions will be loaded dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Weather Info -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold gradient-text mb-4">天气信息</h3>
+                        <div class="text-center">
+                            <div class="text-4xl mb-2">☀️</div>
+                            <div class="text-2xl font-bold text-gray-800">22°C</div>
+                            <div class="text-gray-600">晴朗</div>
+                            <div class="text-sm text-gray-500 mt-2">适宜游览</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold gradient-text mb-4">快捷操作</h3>
+                        <div class="space-y-3">
+                            <button class="w-full btn-primary text-white py-3 rounded-xl font-medium" onclick="window.location.href='routes.html'">
+                                规划游览路线
+                            </button>
+                            <button class="w-full btn-secondary py-3 rounded-xl font-medium" onclick="window.location.href='profile.html'">
+                                查看我的打卡
+                            </button>
+                            <button class="w-full btn-secondary py-3 rounded-xl font-medium" id="share-qr-btn">
+                                生成分享二维码
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-blue-600 to-green-600 text-white py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold">西</span>
+                </div>
+                <h3 class="text-lg font-bold">西湖智慧旅游</h3>
+            </div>
+            <p class="text-blue-100 mb-2">探索西湖之美，体验智慧之旅</p>
+            <p class="text-sm text-blue-200">© 2025 西湖智慧旅游系统. 让科技为传统文化注入新的活力.</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="main.js"></script>
+    <script>
+        // 景点详情页面特定功能
+        let currentAttraction = null;
+        let imageGallery = null;
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAttractionPage();
+            recordPageVisit('attractions.html');
+        });
+        
+        // 初始化景点页面
+        function initializeAttractionPage() {
+            // 从URL参数获取景点ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const attractionId = urlParams.get('id') || 'broken-bridge';
+            
+            // 获取景点数据
+            currentAttraction = attractions.find(a => a.id === attractionId) || attractions[0];
+            
+            // 加载景点信息
+            loadAttractionInfo();
+            
+            // 初始化图片轮播
+            initializeImageGallery();
+            
+            // 初始化事件监听器
+            initializeAttractionEventListeners();
+            
+            // 加载相关数据
+            loadReviews();
+            loadNearbyAttractions();
+            
+            // 页面动画
+            initializePageAnimations();
+        }
+        
+        // 加载景点信息
+        function loadAttractionInfo() {
+            if (!currentAttraction) return;
+            
+            document.getElementById('attraction-name').textContent = currentAttraction.name;
+            document.getElementById('rating-stars').textContent = '★'.repeat(Math.floor(currentAttraction.rating)) + '☆'.repeat(5 - Math.floor(currentAttraction.rating));
+            document.getElementById('rating-score').textContent = currentAttraction.rating;
+            document.getElementById('visitor-count').textContent = `${currentAttraction.visitors.toLocaleString()} 人已游览`;
+            document.getElementById('attraction-description').textContent = currentAttraction.description;
+            document.getElementById('poem-content').textContent = `"${currentAttraction.poem}"`;
+            
+            // 更新统计数据（模拟）
+            document.getElementById('checkin-today').textContent = Math.floor(Math.random() * 500) + 100;
+            document.getElementById('favorite-count').textContent = (Math.floor(Math.random() * 2) + 1) + 'k';
+            document.getElementById('share-count').textContent = Math.floor(Math.random() * 1000) + 500;
+            
+            // 根据景点类型设置不同的信息
+            setAttractionSpecificInfo();
+        }
+        
+        // 设置景点特定信息
+        function setAttractionSpecificInfo() {
+            const infoMap = {
+                'broken-bridge': {
+                    openingHours: '全天开放',
+                    ticketPrice: '免费',
+                    suggestedTime: '1-2小时',
+                    bestSeason: '冬季（观雪最佳）',
+                    culturalContent: '断桥是西湖最著名的景点之一，因《白蛇传》的传说而闻名于世。每当冬季雪后，桥的阳面冰雪消融，阴面仍被积雪覆盖，从远处望去，桥身若隐若现，如同断开一般，故名"断桥残雪"。'
+                },
+                'three-ponds': {
+                    openingHours: '8:00-17:00',
+                    ticketPrice: '55元（含船票）',
+                    suggestedTime: '2-3小时',
+                    bestSeason: '春秋两季',
+                    culturalContent: '三潭印月是西湖十景之一，被誉为"西湖第一胜境"。岛上有三座石塔，中秋之夜，塔中点燃蜡烛，烛光倒映在湖中，与明月交相辉映，形成"三潭印月"的奇景。'
+                },
+                'leifeng-tower': {
+                    openingHours: '8:00-17:30',
+                    ticketPrice: '40元',
+                    suggestedTime: '1-2小时',
+                    bestSeason: '傍晚（观夕照最佳）',
+                    culturalContent: '雷峰塔是西湖的标志性建筑，始建于五代十国时期。因《白蛇传》中白娘子被法海镇压在雷峰塔下的传说而家喻户晓。夕阳西下时，塔影倒映在湖面上，形成"雷峰夕照"的美景。'
+                }
+            };
+            
+            const info = infoMap[currentAttraction.id] || infoMap['broken-bridge'];
+            
+            document.getElementById('opening-hours').textContent = info.openingHours;
+            document.getElementById('ticket-price').textContent = info.ticketPrice;
+            document.getElementById('suggested-time').textContent = info.suggestedTime;
+            document.getElementById('best-season').textContent = info.bestSeason;
+            document.getElementById('cultural-content').textContent = info.culturalContent;
+        }
+        
+        // 初始化图片轮播
+        function initializeImageGallery() {
+            const imageList = document.getElementById('image-list');
+            
+            // 为当前景点生成多张图片（使用同一张图片模拟多张）
+            for (let i = 0; i < 4; i++) {
+                const li = document.createElement('li');
+                li.className = 'splide__slide';
+                li.innerHTML = `<img src="${currentAttraction.image}" alt="${currentAttraction.name}" loading="lazy">`;
+                imageList.appendChild(li);
+            }
+            
+            // 初始化Splide
+            imageGallery = new Splide('#image-gallery', {
+                type: 'loop',
+                autoplay: true,
+                interval: 3000,
+                pauseOnHover: true,
+                arrows: true,
+                pagination: true
+            }).mount();
+        }
+        
+        // 初始化事件监听器
+        function initializeAttractionEventListeners() {
+            // 打卡按钮
+            document.getElementById('checkin-btn').addEventListener('click', function() {
+                checkInAttraction(currentAttraction.id);
+                recordClick('checkin-btn', 'checkin', currentAttraction.id);
+                
+                // 按钮动画
+                anime({
+                    targets: this,
+                    scale: [1, 0.95, 1],
+                    duration: 200,
+                    easing: 'easeInOutQuad'
+                });
+            });
+            
+            // 收藏按钮
+            document.getElementById('favorite-btn').addEventListener('click', function() {
+                toggleFavorite(currentAttraction.id);
+                recordClick('favorite-btn', 'favorite', currentAttraction.id);
+            });
+            
+            // 分享按钮
+            document.getElementById('share-btn').addEventListener('click', function() {
+                shareAttraction(currentAttraction);
+                recordClick('share-btn', 'share', currentAttraction.id);
+            });
+            
+            // 分享二维码按钮
+            document.getElementById('share-qr-btn').addEventListener('click', function() {
+                generateQRCode();
+                recordClick('share-qr-btn', 'qr-code', currentAttraction.id);
+            });
+        }
+        
+        // 切换收藏状态
+        function toggleFavorite(attractionId) {
+            const favoriteBtn = document.getElementById('favorite-btn');
+            const favorites = userData.favorites || [];
+            const index = favorites.indexOf(attractionId);
+            
+            if (index > -1) {
+                // 取消收藏
+                favorites.splice(index, 1);
+                favoriteBtn.innerHTML = '🤍 收藏';
+                favoriteBtn.classList.remove('active');
+                showToast('已取消收藏', 'info');
+            } else {
+                // 添加收藏
+                favorites.push(attractionId);
+                favoriteBtn.innerHTML = '❤️ 已收藏';
+                favoriteBtn.classList.add('active');
+                showToast('收藏成功！', 'success');
+            }
+            
+            userData.favorites = favorites;
+            saveUserData();
+            
+            // 按钮动画
+            anime({
+                targets: favoriteBtn,
+                scale: [1, 1.1, 1],
+                duration: 300,
+                easing: 'easeInOutQuad'
+            });
+        }
+        
+        // 分享景点
+        function shareAttraction(attraction) {
+            if (navigator.share) {
+                navigator.share({
+                    title: `${attraction.name} - 西湖智慧旅游`,
+                    text: `${attraction.name}：${attraction.description}`,
+                    url: window.location.href
+                });
+            } else {
+                // 复制链接到剪贴板
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showToast('链接已复制到剪贴板', 'success');
+                });
+            }
+        }
+        
+        // 生成二维码
+        function generateQRCode() {
+            showToast('二维码生成中...', 'info');
+            
+            setTimeout(() => {
+                showToast('二维码已生成！', 'success');
+            }, 2000);
+        }
+        
+        // 加载评价
+        function loadReviews() {
+            const reviewsContainer = document.getElementById('reviews-container');
+            const reviews = [
+                {
+                    name: '张小明',
+                    avatar: '👨',
+                    rating: 5,
+                    date: '2025-01-06',
+                    content: '景色非常美，特别是下雪的时候，真的是断桥残雪的感觉！推荐大家在冬天来游览。'
+                },
+                {
+                    name: '李美丽',
+                    avatar: '👩',
+                    rating: 4,
+                    date: '2025-01-05',
+                    content: '人有点多，但是风景确实不错。历史文化底蕴深厚，值得一游。'
+                },
+                {
+                    name: '王游客',
+                    avatar: '🧑',
+                    rating: 5,
+                    date: '2025-01-04',
+                    content: '西湖的经典景点，不管是拍照还是了解历史文化都很棒！'
+                }
+            ];
+            
+            reviews.forEach(review => {
+                const reviewDiv = document.createElement('div');
+                reviewDiv.className = 'bg-gray-50 p-4 rounded-xl';
+                reviewDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="text-2xl">${review.avatar}</div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium">${review.name}</h4>
+                                <div class="flex items-center space-x-2">
+                                    <div class="rating-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+                                    <span class="text-sm text-gray-500">${review.date}</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-700">${review.content}</p>
+                        </div>
+                    </div>
+                `;
+                reviewsContainer.appendChild(reviewDiv);
+            });
+        }
+        
+        // 加载附近景点
+        function loadNearbyAttractions() {
+            const nearbyContainer = document.getElementById('nearby-attractions');
+            const nearbyAttractions = attractions.filter(a => a.id !== currentAttraction.id).slice(0, 3);
+            
+            nearbyAttractions.forEach(attraction => {
+                const div = document.createElement('div');
+                div.className = 'attraction-card bg-gray-50 p-3 rounded-xl';
+                div.onclick = () => viewAttraction(attraction.id);
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${attraction.image}" alt="${attraction.name}" class="w-12 h-12 rounded-lg object-cover">
+                        <div class="flex-1">
+                            <h4 class="font-medium">${attraction.name}</h4>
+                            <p class="text-sm text-gray-500">${attraction.description}</p>
+                        </div>
+                        <div class="text-yellow-500 text-sm">★ ${attraction.rating}</div>
+                    </div>
+                `;
+                nearbyContainer.appendChild(div);
+            });
+        }
+        
+        // 页面动画
+        function initializePageAnimations() {
+            // 标题动画
+            anime({
+                targets: '#attraction-header',
+                opacity: [0, 1],
+                translateY: [30, 0],
+                duration: 800,
+                easing: 'easeOutQuad'
+            });
+            
+            // 面板依次出现
+            anime({
+                targets: '.floating-panel',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 600,
+                delay: anime.stagger(150, {start: 400}),
+                easing: 'easeOutQuad'
+            });
+        }
+        
+        // 显示提示
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            toast.className = `fixed top-24 right-6 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            anime({
+                targets: toast,
+                translateX: [300, 0],
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutQuad'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: toast,
+                    translateX: [0, 300],
+                    opacity: [1, 0],
+                    duration: 500,
+                    easing: 'easeInQuad',
+                    complete: () => {
+                        document.body.removeChild(toast);
+                    }
+                });
+            }, 3000);
+        }
+        
+        // 查看景点
+        function viewAttraction(attractionId) {
+            window.location.href = `attractions.html?id=${attractionId}`;
+        }
+    </script>
+</body>
+</html>

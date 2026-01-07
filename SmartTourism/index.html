@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西湖智慧旅游 - 诗画西湖，智慧之旅</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- p5.js for background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    
+    <style>
+        :root {
+            --west-lake-blue: #4A90A4;
+            --lotus-green: #7FB069;
+            --plum-pink: #E8B4B8;
+            --ink-gray: #F5F5F0;
+            --text-dark: #2C3E50;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--ink-gray);
+            color: var(--text-dark);
+        }
+        
+        .hero-title {
+            font-family: 'Noto Serif SC', serif;
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 144, 164, 0.3);
+        }
+        
+        .map-container {
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .floating-panel {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .search-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box:focus {
+            border-color: var(--west-lake-blue);
+            box-shadow: 0 0 20px rgba(74, 144, 164, 0.2);
+        }
+        
+        .attraction-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .attraction-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        #p5-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--west-lake-blue), var(--lotus-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body>
+    <!-- P5.js Background -->
+    <div id="p5-background"></div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">西</span>
+                    </div>
+                    <h1 class="text-xl font-bold gradient-text">西湖智慧旅游</h1>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">首页导览</a>
+                    <a href="attractions.html" class="text-gray-700 hover:text-blue-600 transition-colors">景点详情</a>
+                    <a href="routes.html" class="text-gray-700 hover:text-blue-600 transition-colors">路线规划</a>
+                    <a href="profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">个人中心</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="ai-assistant-btn" class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        AI助手
+                    </button>
+                    <button id="mobile-menu-btn" class="md:hidden text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="pt-24 pb-12 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-8">
+                <h1 class="hero-title text-4xl md:text-6xl font-bold mb-4 opacity-0" id="main-title">
+                    诗画西湖，智慧之旅
+                </h1>
+                <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto opacity-0" id="subtitle">
+                    探索杭州西湖的诗情画意，体验科技与传统文化的完美融合，开启您的智慧旅游新体验
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Main Content -->
+    <section class="px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Map Section -->
+                <div class="lg:col-span-2">
+                    <div class="floating-panel rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-bold gradient-text">西湖景区地图</h2>
+                            <div class="flex items-center space-x-2">
+                                <div class="pulse-dot w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">实时定位</span>
+                            </div>
+                        </div>
+                        
+                        <div id="map" class="map-container"></div>
+                        
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button class="filter-btn active px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700" data-type="all">
+                                全部景点
+                            </button>
+                            <button class="filter-btn px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700" data-type="nature">
+                                自然风光
+                            </button>
+                            <button class="filter-btn px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700" data-type="culture">
+                                历史文化
+                            </button>
+                            <button class="filter-btn px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-yellow-100 hover:text-yellow-700" data-type="leisure">
+                                休闲娱乐
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Info Panel -->
+                <div class="space-y-6">
+                    <!-- Search Box -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold mb-4 gradient-text">搜索景点</h3>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="search-input"
+                                placeholder="输入景点名称..."
+                                class="search-box w-full px-4 py-3 rounded-xl outline-none"
+                            >
+                            <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Popular Attractions -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold mb-4 gradient-text">热门景点</h3>
+                        <div class="space-y-3">
+                            <div class="attraction-card p-3 rounded-xl cursor-pointer" data-attraction="broken-bridge">
+                                <div class="flex items-center space-x-3">
+                                    <img src="resources/attraction-3.jpg" alt="断桥残雪" class="w-12 h-12 rounded-lg object-cover">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium">断桥残雪</h4>
+                                        <p class="text-sm text-gray-500">西湖十景之首</p>
+                                    </div>
+                                    <div class="text-yellow-500">
+                                        ★ 4.8
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="attraction-card p-3 rounded-xl cursor-pointer" data-attraction="three-ponds">
+                                <div class="flex items-center space-x-3">
+                                    <img src="resources/attraction-2.jpg" alt="三潭印月" class="w-12 h-12 rounded-lg object-cover">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium">三潭印月</h4>
+                                        <p class="text-sm text-gray-500">小瀛洲仙境</p>
+                                    </div>
+                                    <div class="text-yellow-500">
+                                        ★ 4.9
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="attraction-card p-3 rounded-xl cursor-pointer" data-attraction="leifeng-tower">
+                                <div class="flex items-center space-x-3">
+                                    <img src="resources/attraction-1.jpg" alt="雷峰塔" class="w-12 h-12 rounded-lg object-cover">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium">雷峰塔</h4>
+                                        <p class="text-sm text-gray-500">西湖的标志性建筑</p>
+                                    </div>
+                                    <div class="text-yellow-500">
+                                        ★ 4.7
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full mt-4 btn-primary text-white py-2 rounded-xl font-medium" onclick="window.location.href='attractions.html'">
+                            查看更多景点
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="floating-panel rounded-2xl p-6">
+                        <h3 class="text-lg font-bold mb-4 gradient-text">快捷功能</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button class="quick-action-btn p-3 bg-blue-50 rounded-xl text-center hover:bg-blue-100 transition-colors" onclick="window.location.href='routes.html'">
+                                <div class="text-2xl mb-1">🗺️</div>
+                                <div class="text-sm font-medium text-blue-700">路线规划</div>
+                            </button>
+                            
+                            <button class="quick-action-btn p-3 bg-green-50 rounded-xl text-center hover:bg-green-100 transition-colors" onclick="checkIn()">
+                                <div class="text-2xl mb-1">📍</div>
+                                <div class="text-sm font-medium text-green-700">快速打卡</div>
+                            </button>
+                            
+                            <button class="quick-action-btn p-3 bg-purple-50 rounded-xl text-center hover:bg-purple-100 transition-colors" id="ai-chat-btn">
+                                <div class="text-2xl mb-1">🤖</div>
+                                <div class="text-sm font-medium text-purple-700">AI问答</div>
+                            </button>
+                            
+                            <button class="quick-action-btn p-3 bg-yellow-50 rounded-xl text-center hover:bg-yellow-100 transition-colors" onclick="window.location.href='profile.html'">
+                                <div class="text-2xl mb-1">📊</div>
+                                <div class="text-sm font-medium text-yellow-700">我的数据</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Statistics Section -->
+    <section class="px-6 pb-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="floating-panel rounded-2xl p-8">
+                <h2 class="text-2xl font-bold gradient-text text-center mb-8">今日景区数据</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600 mb-2" id="visitor-count">12,580</div>
+                        <div class="text-gray-600">今日游客</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600 mb-2" id="checkin-count">3,247</div>
+                        <div class="text-gray-600">打卡次数</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600 mb-2" id="popular-spot">断桥残雪</div>
+                        <div class="text-gray-600">热门景点</div>
+                    </div>
+                </div>
+                
+                <div class="mt-8">
+                    <div id="popularity-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- AI Assistant Modal -->
+    <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="floating-panel rounded-2xl p-6 w-full max-w-md">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold gradient-text">AI智能助手</h3>
+                    <button id="close-ai-modal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="h-64 overflow-y-auto mb-4 p-3 bg-gray-50 rounded-xl" id="ai-chat-content">
+                    <div class="text-sm text-gray-600 mb-2">AI助手: 您好！我是西湖智慧旅游AI助手，有什么可以帮助您的吗？</div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        id="ai-input"
+                        placeholder="输入您的问题..."
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500"
+                    >
+                    <button id="send-ai-message" class="btn-primary text-white px-4 py-2 rounded-lg">发送</button>
+                </div>
+                
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button class="ai-quick-question px-2 py-1 bg-gray-100 text-xs rounded hover:bg-gray-200" data-question="西湖有哪些著名景点？">西湖有哪些著名景点？</button>
+                    <button class="ai-quick-question px-2 py-1 bg-gray-100 text-xs rounded hover:bg-gray-200" data-question="最佳游览时间？">最佳游览时间？</button>
+                    <button class="ai-quick-question px-2 py-1 bg-gray-100 text-xs rounded hover:bg-gray-200" data-question="附近有什么美食？">附近有什么美食？</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-blue-600 to-green-600 text-white py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold">西</span>
+                </div>
+                <h3 class="text-lg font-bold">西湖智慧旅游</h3>
+            </div>
+            <p class="text-blue-100 mb-2">探索西湖之美，体验智慧之旅</p>
+            <p class="text-sm text-blue-200">© 2025 西湖智慧旅游系统. 让科技为传统文化注入新的活力.</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
